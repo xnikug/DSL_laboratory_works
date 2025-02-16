@@ -108,6 +108,21 @@ class FiniteAutomaton:
         self.transitions = transitions
         self.initial_state = initial_state
         self.accept_states = accept_states
+    
+    # Checks if an input string can be obtained via the state transition from it
+    def check(self, input_string):
+        curr_state = self.initial_state
+        for symbol in input_string:
+            # Check for valid symbols
+            if symbol not in self.alphabet:
+                return False 
+
+            # Check for transitions
+            if curr_state in self.transitions and symbol in self.transitions[curr_state]:
+                curr_state = self.transitions[curr_state][symbol]
+            else:
+                return False
+        return curr_state in self.accept_states
 if __name__ == "__main__":
     grammar = Grammar(
         non_terminals={"S", "B", "C", "D"},
@@ -124,4 +139,10 @@ if __name__ == "__main__":
     print('Classification of grammar: ' + grammar.get_type())
     # The method that generates 5 valid strings
     print('5 random strings from the language expressed by the grammar: ' + str(grammar.generate_strings(5)))
-    grammar.to_finite_automaton()
+    # Convert to Finite Automaton
+    finite_automaton = grammar.to_finite_automaton()
+    # Some checks
+    print(finite_automaton.check("ab"))
+    print(finite_automaton.check("aaba"))
+    print(finite_automaton.check("aabcab"))
+    print(finite_automaton.check("aa"))
