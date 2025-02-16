@@ -142,7 +142,10 @@ def check(self, input_string):
     print(finite_automaton.check("aabcab"))
     print(finite_automaton.check("aa"))
 ```
-- The final output of the program
+The final output of the program
 ![The final output of the program](image-1.png)
 ## Conclusions
-This laboratory work demonstrates how to convert a Type 3 grammar into a finite automaton and check if input strings can be accepted by it. The implementation includes functions for generating strings, classifying grammar types, and simulating state transitions in a finite automaton.
+This laboratory work demonstrates how to convert a Type 3 grammar into a finite automaton and check if input strings can be accepted by it. The implementation includes functions for generating strings, classifying grammar types, and simulating state transitions in a finite automaton. This work has also illustrated the importance of proper software design in implementing theoretical concepts, as the object-oriented approach used made it possible to separate different functionalities while maintaning the link.
+## References
+
+1. Formal Language & Automata Theory – Course Materials.
