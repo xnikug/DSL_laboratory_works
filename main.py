@@ -1,3 +1,5 @@
+# Nicolae Marga, FAF-231, Laboratory Work No. 1
+
 import random 
 
 # For type 3 grammars in the Chomsky hierarchy
@@ -34,7 +36,8 @@ class Grammar:
             return result
 
         # The symbol doesn't match anything in the production
-        return ''
+        raise Exception('Invalid symbol')
+    
     # Return a certain number of valid words that is contained in the language 
     def generate_strings(self, num):
         self.words = []
@@ -58,7 +61,7 @@ class Grammar:
         print(rules)
 
         for production in rules:
-
+            # Check if either the non-terminal char is at the right side or the left side
             if all(production[i] in self.terminals for i in range(len(production) - 1)) and production[-1] in self.non_terminals:
                 right_type = True
             elif production[0] in self.non_terminals and  all(production[i] in self.terminals for i in range(1, len(production))):
@@ -73,7 +76,38 @@ class Grammar:
             return 'Left Linear'
         elif right_type:
             return 'Right Linear'
+    def to_finite_automaton(self):
+        final_state = 'END'
+        transitions = {}
 
+        for non_terminal in self.non_terminals:
+            transitions[non_terminal] = {}
+
+        for non_terminal, productions in self.productions.items():
+            for production in productions:
+                if len(production) == 1:  # End terminal production
+                    transitions[non_terminal][production] = final_state
+                elif self.type == 'Right Linear':
+                    transition, new_state = production[:-1], production[1]
+                    transitions[non_terminal][transition] = new_state
+                elif self.type == 'Left Linear':
+                    transition, new_state = production[1], production[:-1]
+                    transitions[non_terminal][transition] = new_state
+        print(transitions)
+        return FiniteAutomaton(
+            states=self.non_terminals.union({final_state}),
+            alphabet=self.terminals,
+            transitions=transitions,
+            initial_state=self.start_symbol,
+            accept_states=[final_state]
+        )
+class FiniteAutomaton:
+    def __init__(self, states, alphabet, transitions, initial_state, accept_states):
+        self.states = states
+        self.alphabet = alphabet
+        self.transitions = transitions
+        self.initial_state = initial_state
+        self.accept_states = accept_states
 if __name__ == "__main__":
     grammar = Grammar(
         non_terminals={"S", "B", "C", "D"},
@@ -86,5 +120,8 @@ if __name__ == "__main__":
         },
         start_symbol="S"
     )
-    print(grammar.get_type())
-    print(grammar.generate_strings(100))
+    # The method that clasifies the grammar of the object
+    print('Classification of grammar: ' + grammar.get_type())
+    # The method that generates 5 valid strings
+    print('5 random strings from the language expressed by the grammar: ' + str(grammar.generate_strings(5)))
+    grammar.to_finite_automaton()
