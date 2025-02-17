@@ -58,7 +58,7 @@ class Grammar:
 
         # Get the end result of grammar rules which have length of 2
         rules = [rule for rule in total_rules if len(rule) >= 2]
-        print(rules)
+        #print(rules)
 
         for production in rules:
             # Check if either the non-terminal char is at the right side or the left side
@@ -77,7 +77,7 @@ class Grammar:
         elif right_type:
             return 'Right Linear'
     def to_finite_automaton(self):
-        final_state = 'END'
+        final_state = 'dead'
         transitions = {}
 
         for non_terminal in self.non_terminals:
@@ -109,8 +109,8 @@ class FiniteAutomaton:
         self.initial_state = initial_state
         self.accept_states = accept_states
     
-    # Checks if an input string can be obtained via the state transition from it
-    def check(self, input_string):
+    # Checks and accepts if an input string can be obtained via the state transition from it
+    def accept(self, input_string):
         curr_state = self.initial_state
         for symbol in input_string:
             # Check for valid symbols
@@ -142,7 +142,7 @@ if __name__ == "__main__":
     # Convert to Finite Automaton
     finite_automaton = grammar.to_finite_automaton()
     # Some checks
-    print(finite_automaton.check("ab"))
-    print(finite_automaton.check("aaba"))
-    print(finite_automaton.check("aabcab"))
-    print(finite_automaton.check("aa"))
+    print(finite_automaton.accept("ab"))
+    print(finite_automaton.accept("aaba"))
+    print(finite_automaton.accept("aabcab"))
+    print(finite_automaton.accept("aa"))
