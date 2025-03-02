@@ -97,11 +97,18 @@ class Grammar:
                     transitions[non_terminal][production] = final_state
                 elif self.type == 'Right Linear':
                     transition, new_state = production[:-1], production[1]
-                    transitions[non_terminal][transition] = new_state
+                    if non_terminal in transitions and transition in transitions[non_terminal]:
+                         transitions[non_terminal][transition].append(new_state)
+                    else:
+                        transitions[non_terminal][transition] = [new_state]
+                    
                 elif self.type == 'Left Linear':
                     transition, new_state = production[1], production[:-1]
-                    transitions[non_terminal][transition] = new_state
-        print(transitions)
+                    if non_terminal in transitions and transition in transitions[non_terminal]:
+                         transitions[non_terminal][transition].append(new_state)
+                    else:
+                        transitions[non_terminal][transition] = [new_state]
+        print("Conversion to transitions: " + str(transitions))
         if final_states == None:
             final_states = {final_state}
         return FiniteAutomaton(
@@ -164,17 +171,17 @@ class FiniteAutomaton:
 
 if __name__ == '__main__':
     # FA definition based on provided details
-    Q = {"0", "1", "2", "3"}
-    Σ = {"a", "b", "c"}
-    F = {"3"}
-    start_state = "0"
+    Q = {'0', '1', '2', '3'}
+    Σ = {'a', 'b', 'c'}
+    F = {'3'}
+    start_state = '0'
     transitions = {
-        "0": {"a": ["0", "1"]},
-        "1": {"b": ["2"]},
-        "2": {"c": ["3"], "a": ["2"]},
-        "3": {"c": ["3"]},
+        '0': {'a': ['0', '1']},
+        '1': {'b': ['2']},
+        '2': {'c': ['3'], 'a': ['2']},
+        '3': {'c': ['3']},
     }
-
+    print("Original defined transitions: " + str(transitions))
     # Create the finite automaton
     fa = FiniteAutomaton(Q, Σ, start_state, F, transitions)
 
@@ -182,7 +189,7 @@ if __name__ == '__main__':
     print("Is the automaton deterministic?", fa.is_deterministic())
     fa.create_diagram().render('finite_automaton1', format='png')
 
-    # Get the Grammar object
+    # Conversion from fa to grammar
     grammar = fa.to_regular_grammar()
     print("The Converted Grammar G = {V_N, V_T, S, V_P}")
     print("V_N = " + str(grammar.non_terminals))
@@ -190,7 +197,7 @@ if __name__ == '__main__':
     print("S = " + str(grammar.start_symbol))
     print("V_P = " + str(grammar.productions))
     
+    # Conversion from grammar back to fa
     fa = grammar.to_finite_automaton(F)
-    fa.create_diagram().render('finite_automaton2', format='png')
 
     
