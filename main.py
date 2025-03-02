@@ -86,13 +86,11 @@ class Grammar:
             return 'Left Linear'
         elif right_type:
             return 'Right Linear'
-    def to_finite_automaton(self):
+    def to_finite_automaton(self, final_states = None):
         final_state = 'dead'
         transitions = {}
-
         for non_terminal in self.non_terminals:
             transitions[non_terminal] = {}
-
         for non_terminal, productions in self.productions.items():
             for production in productions:
                 if len(production) == 1:  # End terminal production
@@ -104,12 +102,14 @@ class Grammar:
                     transition, new_state = production[1], production[:-1]
                     transitions[non_terminal][transition] = new_state
         print(transitions)
+        if final_states == None:
+            final_states = {final_state}
         return FiniteAutomaton(
-            states=self.non_terminals.union({final_state}),
+            states=self.non_terminals.union(final_states),
             alphabet=self.terminals,
-            transitions=transitions,
-            initial_state=self.start_symbol,
-            accept_states=[final_state]
+            start_state=self.start_symbol,
+            final_states=final_states,
+            transitions=transitions
         )
 class FiniteAutomaton:
     def __init__(self, states, alphabet, start_state, final_states, transitions):
@@ -180,6 +180,7 @@ if __name__ == '__main__':
 
     # Check if the automaton is deterministic
     print("Is the automaton deterministic?", fa.is_deterministic())
+    fa.create_diagram().render('finite_automaton1', format='png')
 
     # Get the Grammar object
     grammar = fa.to_regular_grammar()
@@ -189,7 +190,7 @@ if __name__ == '__main__':
     print("S = " + str(grammar.start_symbol))
     print("V_P = " + str(grammar.productions))
     
-    fa = grammar.to_finite_automaton()
-    fa.create_diagram().render('finite_automaton', format='png')
+    fa = grammar.to_finite_automaton(F)
+    fa.create_diagram().render('finite_automaton2', format='png')
 
     
