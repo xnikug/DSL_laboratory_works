@@ -168,7 +168,11 @@ class FiniteAutomaton:
                         rules[state].append(symbol)
 
         return Grammar(non_terminals, terminals, rules, start_symbol)    
-
+    def to_dfa(self):
+        if self.is_deterministic():
+            return self
+        else:
+            return self
 if __name__ == '__main__':
     # FA definition based on provided details
     Q = {'0', '1', '2', '3'}
@@ -187,7 +191,6 @@ if __name__ == '__main__':
 
     # Check if the automaton is deterministic
     print("Is the automaton deterministic?", fa.is_deterministic())
-    fa.create_diagram().render('finite_automaton1', format='png')
 
     # Conversion from fa to grammar
     grammar = fa.to_regular_grammar()
@@ -199,5 +202,8 @@ if __name__ == '__main__':
     
     # Conversion from grammar back to fa
     fa = grammar.to_finite_automaton(F)
+    fa.create_diagram().render('ndfa', format='png')
+
+    dfa = fa.to_dfa()
 
     
