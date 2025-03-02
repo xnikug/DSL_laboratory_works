@@ -1,4 +1,5 @@
 from graphviz import Digraph, Source
+import random
 # Nicolae Marga, FAF-231, Laboratory Work No. 2
 '''
 Variant 21
@@ -12,6 +13,104 @@ F = {q3},
 δ(q3,c) = q3,
 δ(q2,a) = q2.
 '''
+class Grammar:
+    # Constructor for grammar
+    def __init__(self, non_terminals, terminals, productions, start_symbol):
+        self.non_terminals = non_terminals
+        self.terminals = terminals
+        self.productions = productions
+        self.start_symbol = start_symbol
+        self.type = self.get_type()
+        self.words = []
+    
+    # Generate all possible strings up to a certain depth
+    def generate_string(self, symbol=None, len=0, max_len=100):
+        # If no symbol is provided, use the start symbol
+        if symbol is None:
+            symbol = self.start_symbol
+
+        # It may return the non-terminal symbol to limit the recursion depth
+        if len > max_len:
+            return symbol
+
+        # Symbol is terminal
+        if symbol in self.terminals:
+            return symbol
+
+        if symbol in self.productions:
+            # Random production
+            production = random.choice(self.productions[symbol])
+            result = ''
+            for sym in production:
+                result += self.generate_string(sym, len + 1, max_len)
+            return result
+
+        # The symbol doesn't match anything in the production
+        raise Exception('Invalid symbol')
+    
+    # Return a certain number of valid words that is contained in the language 
+    def generate_strings(self, num):
+        self.words = []
+        while len(self.words) < num:
+            word = self.generate_string()
+            # Only valid and unique words append 
+            if all(word[i] in self.terminals for i in range(len(word))) and word not in self.words:
+                self.words.append(word)
+        return self.words
+    # Checks it's type of grammar based on the productions rules
+    def get_type(self):
+        left_type = False
+        right_type = False
+
+        total_rules = []
+        for productions_rule in self.productions.values():
+            total_rules += productions_rule
+
+        # Get the end result of grammar rules which have length of 2
+        rules = [rule for rule in total_rules if len(rule) >= 2]
+        #print(rules)
+
+        for production in rules:
+            # Check if either the non-terminal char is at the right side or the left side
+            if all(production[i] in self.terminals for i in range(len(production) - 1)) and production[-1] in self.non_terminals:
+                right_type = True
+            elif production[0] in self.non_terminals and  all(production[i] in self.terminals for i in range(1, len(production))):
+                left_type = True
+            else:
+                raise ValueError('Invalid type 3 grammar definition')
+
+        if left_type and right_type:
+            raise ValueError('The grammar is not of type 3')
+
+        if left_type:
+            return 'Left Linear'
+        elif right_type:
+            return 'Right Linear'
+    def to_finite_automaton(self):
+        final_state = 'dead'
+        transitions = {}
+
+        for non_terminal in self.non_terminals:
+            transitions[non_terminal] = {}
+
+        for non_terminal, productions in self.productions.items():
+            for production in productions:
+                if len(production) == 1:  # End terminal production
+                    transitions[non_terminal][production] = final_state
+                elif self.type == 'Right Linear':
+                    transition, new_state = production[:-1], production[1]
+                    transitions[non_terminal][transition] = new_state
+                elif self.type == 'Left Linear':
+                    transition, new_state = production[1], production[:-1]
+                    transitions[non_terminal][transition] = new_state
+        print(transitions)
+        return FiniteAutomaton(
+            states=self.non_terminals.union({final_state}),
+            alphabet=self.terminals,
+            transitions=transitions,
+            initial_state=self.start_symbol,
+            accept_states=[final_state]
+        )
 class FiniteAutomaton:
     def __init__(self, states, alphabet, start_state, final_states, transitions):
         self.states = states  # Set of states
@@ -46,18 +145,34 @@ class FiniteAutomaton:
                     dot.edge(state, next_state, label=symbol)
 
         return dot
+    def to_regular_grammar(self):
+        non_terminals = self.states 
+        terminals = self.alphabet
+        start_symbol = self.start_state
+        rules = {nt: [] for nt in non_terminals}
+
+        # Transform transitions into production rules
+        for state, transitions in self.transitions.items():
+            for symbol, next_states in transitions.items():
+                for next_state in next_states:
+                    rules[state].append(f"{symbol}{next_state}")
+                    # If the next state is an accept state, add a production rule ending in the terminal
+                    if next_state in self.final_states and not self.transitions.get(next_state):
+                        rules[state].append(symbol)
+
+        return Grammar(non_terminals, terminals, rules, start_symbol)    
 
 if __name__ == '__main__':
     # FA definition based on provided details
-    Q = {"q0", "q1", "q2", "q3"}
+    Q = {"0", "1", "2", "3"}
     Σ = {"a", "b", "c"}
-    F = {"q3"}
-    start_state = "q0"
+    F = {"3"}
+    start_state = "0"
     transitions = {
-        "q0": {"a": ["q0", "q1"]},
-        "q1": {"b": ["q2"]},
-        "q2": {"c": ["q3"], "a": ["q2"]},
-        "q3": {"c": ["q3"]},
+        "0": {"a": ["0", "1"]},
+        "1": {"b": ["2"]},
+        "2": {"c": ["3"], "a": ["2"]},
+        "3": {"c": ["3"]},
     }
 
     # Create the finite automaton
@@ -65,4 +180,16 @@ if __name__ == '__main__':
 
     # Check if the automaton is deterministic
     print("Is the automaton deterministic?", fa.is_deterministic())
+
+    # Get the Grammar object
+    grammar = fa.to_regular_grammar()
+    print("The Converted Grammar G = {V_N, V_T, S, V_P}")
+    print("V_N = " + str(grammar.non_terminals))
+    print("V_T = " + str(grammar.terminals))
+    print("S = " + str(grammar.start_symbol))
+    print("V_P = " + str(grammar.productions))
+    
+    fa = grammar.to_finite_automaton()
     fa.create_diagram().render('finite_automaton', format='png')
+
+    
