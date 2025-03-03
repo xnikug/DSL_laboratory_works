@@ -25,8 +25,19 @@ d. Represent the finite automaton graphically (Optional, and can be considered a
 Grammar Class
 ### Grammar Class Methods:
 The Grammar class has sever key methods, which include:
-Grammar Classification
-The get_type() method determines the type of grammar, and if it is type 3 then it also checks if it is left-linear or right-linear by analyzing production rules.
+
+ - Grammar Classification
+
+The get_type() method is pivotal in determining the type of grammar according to the Chomsky hierarchy, a classification scheme for grammars introduced by Noam Chomsky. This hierarchy categorizes grammars into four types based on their production rules:
+
+Type 0: Unrestricted Grammar - The most general form of grammar, with no restrictions on production rules.
+
+Type 1: Context-Sensitive Grammar (CSG) - Grammars where the length of the left-hand side of a production rule is less than or equal to the length of the right-hand side.
+
+Type 2: Context-Free Grammar (CFG) - Grammars with production rules where the left-hand side consists of a single non-terminal symbol.
+
+Type 3: Regular Grammar - The simplest form, further divided into left-linear and right-linear grammars.
+
 ```python
     def get_type(self):
         left_type = False
@@ -73,8 +84,9 @@ The get_type() method determines the type of grammar, and if it is type 3 then i
         
         return "Type 0: Unrestricted Grammar"
 ```
-Grammar to Finite Automaton Conversion
-The to_finite_automaton() method converts the grammar into an equivalent finite automaton:
+### Grammar to Finite Automaton Conversion
+The to_finite_automaton() method converts the given grammar into an equivalent finite automaton (FA). Finite automata are abstract machines used to recognize regular languages. This conversion is particularly useful for visualizing and analyzing the behavior of the grammar in a finite state system. The method creates states, transitions, and defines the start and final states of the automaton based on the grammar's production rules.
+
 ```python
 def to_finite_automaton(self, final_states = None):
     final_state = 'dead'
@@ -110,7 +122,7 @@ def to_finite_automaton(self, final_states = None):
     )
 ```
 #### FiniteAutomaton Class
-The FiniteAutomaton class represents both deterministic and non-deterministic finite automata. Key methods include:
+The FiniteAutomaton class represents both deterministic and non-deterministic finite automata (DFA and NDFA, respectively). Finite automata are crucial in the design and analysis of digital circuits, lexical analyzers in compilers, and various other applications in computer science and engineering. This class includes methods for checking determinism, converting to regular grammar, and converting NDFA to DFA.
 ### Determinism Check
 The is_deterministic() method determines if the automaton is deterministic:
 ```python
@@ -121,8 +133,8 @@ def is_deterministic(self):
                 return False
     return True
 ```
-FA to Regular Grammar Conversion
-The to_regular_grammar() method converts the finite automaton back to a regular grammar:
+### FA to Regular Grammar Conversion
+The to_regular_grammar() method converts a finite automaton back into an equivalent regular grammar. This transformation highlights the dual nature of regular grammars and finite automata—both can represent the same set of languages known as regular languages. The method translates the state transitions of the automaton into production rules of the grammar.
 ```python
 def to_regular_grammar(self):
     non_terminals = self.states 
@@ -142,7 +154,7 @@ def to_regular_grammar(self):
     return Grammar(non_terminals, terminals, rules, start_symbol)
 ```
 #### NDFA to DFA Conversion
-The to_dfa() method converts a non-deterministic finite automaton to a deterministic one:
+The to_dfa() method converts a non-deterministic finite automaton (NDFA) into a deterministic finite automaton (DFA). This conversion is necessary for certain computational tasks that require determinism, such as lexical analysis in compilers. The method uses a subset construction algorithm, where states in the DFA represent sets of states in the NDFA, ensuring that each input symbol leads to a unique next state.
 ```python
 def to_dfa(self):
     if self.is_deterministic():
@@ -272,11 +284,12 @@ The program produces a set of results that include a determinism check, which co
     dfa = fa.to_dfa()
     dfa.create_diagram().render('dfa', format='png')
 ```
-Figure 1 displays the console output confirming successful execution of all operations.
+Here is the displayed console output confirming execution of all operations.
 ![Figure 1: The output](image.png)
-The visualization component generates graphical representations of both automata as shown in Figures 2 and 3.
-![Figure 2: The DFA diagram](dfa.png)
-![Figure 3: The NDFA diagram](ndfa.png)
+Here is the graphical representations of the original non-deterministic automaton.
+![Figure 2: The NDFA diagram](ndfa.png)
+Here is the graphical representations of the converted deterministic automaton.
+![Figure 3: The DFA diagram](dfa.png)
 
 ## Conclusions
 This laboratory work demonstrated the implementation of key concepts in automata theory. It consisted of classification of grammars based on the Chomsky hierarchy, conversion between regular grammars and finite automata, determination of automaton determinism, conversion from NDFA to DFA, and graphical representation of automata. The implementation shows the relationship between regular grammars and finite automata, as well as the process of converting non-deterministic automata to deterministic ones. Through this work, it has been illustrated the theoretical connections between different formal language representations and practical algorithms to transform them, which improved the knowledge of the basic principles of computational theory in a practial, executable form.
