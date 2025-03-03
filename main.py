@@ -61,31 +61,48 @@ class Grammar:
     def get_type(self):
         left_type = False
         right_type = False
+        is_cfg = True
+        is_csg = True
 
         total_rules = []
         for productions_rule in self.productions.values():
             total_rules += productions_rule
 
-        # Get the end result of grammar rules which have length of 2
-        rules = [rule for rule in total_rules if len(rule) >= 2]
-        #print(rules)
+        for lhs, rhs_list in self.productions.items():
+            for rhs in rhs_list:
+                # Check if the rule follows CFG format (A → gamma)
+                if lhs not in self.non_terminals or len(lhs) != 1:
+                    is_cfg = False
 
-        for production in rules:
-            # Check if either the non-terminal char is at the right side or the left side
-            if all(production[i] in self.terminals for i in range(len(production) - 1)) and production[-1] in self.non_terminals:
-                right_type = True
-            elif production[0] in self.non_terminals and  all(production[i] in self.terminals for i in range(1, len(production))):
-                left_type = True
-            else:
-                raise ValueError('Invalid type 3 grammar definition')
+                # Check if the rule follows CSG format (|LHS| <= |RHS|)
+                if len(lhs) > len(rhs):
+                    is_csg = False
+
+                # Check for Type 3 (Regular Grammar)
+                if len(rhs) >= 2:
+                    if all(rhs[i] in self.terminals for i in range(len(rhs) - 1)) and rhs[-1] in self.non_terminals:
+                        right_type = True
+                    elif rhs[0] in self.non_terminals and all(rhs[i] in self.terminals for i in range(1, len(rhs))):
+                        left_type = True
+                    else:
+                        is_cfg = False
 
         if left_type and right_type:
-            raise ValueError('The grammar is not of type 3')
+            return "Not a Type 3 Grammar (Possibly CFG or higher)"
 
         if left_type:
-            return 'Left Linear'
+            return "Type 3: Left Linear"
         elif right_type:
-            return 'Right Linear'
+            return "Type 3: Right Linear"
+
+        if is_cfg:
+            return "Type 2: Context-Free Grammar"
+        
+        if is_csg:
+            return "Type 1: Context-Sensitive Grammar"
+        
+        return "Type 0: Unrestricted Grammar"
+
     def to_finite_automaton(self, final_states = None):
         final_state = 'dead'
         transitions = {}
@@ -265,7 +282,7 @@ if __name__ == '__main__':
     print("V_T = " + str(grammar.terminals))
     print("S = " + str(grammar.start_symbol))
     print("V_P = " + str(grammar.productions))
-    
+    print("The type of Grammar: " + grammar.get_type())
     # Conversion from grammar back to fa
     fa = grammar.to_finite_automaton(F)
     fa.create_diagram().render('ndfa', format='png')
