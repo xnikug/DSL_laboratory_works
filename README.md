@@ -12,17 +12,18 @@ Based on the structure of an automaton, there are cases in which with one transi
 
 ## Objectives:
 Understand what an automaton is and what it can be used for.
-a. Provide a function in your grammar type/class that could classify the grammar based on Chomsky hierarchy.
-b. For this you can use the variant from the previous lab.
+
+- Provide a function in your grammar type/class that could classify the grammar based on Chomsky hierarchy.
+- For this you can use the variant from the previous lab.
 According to your variant number (by universal convention it is register ID), get the finite automaton definition and do the following tasks:
-a. Implement conversion of a finite automaton to a regular grammar.
-b. Determine whether your FA is deterministic or non-deterministic.
-c. Implement some functionality that would convert an NDFA to a DFA.
-d. Represent the finite automaton graphically (Optional, and can be considered as a bonus point).
+- Implement conversion of a finite automaton to a regular grammar.
+- Determine whether your FA is deterministic or non-deterministic.
+- Implement some functionality that would convert an NDFA to a DFA.
+- Represent the finite automaton graphically (Optional, and can be considered as a bonus point).
 
 ## Implementation description
 
-Grammar Class
+### Grammar Class
 ### Grammar Class Methods:
 The Grammar class has sever key methods, which include:
 
@@ -286,8 +287,10 @@ The program produces a set of results that include a determinism check, which co
 ```
 Here is the displayed console output confirming execution of all operations.
 ![Figure 1: The output](image.png)
+
 Here is the graphical representations of the original non-deterministic automaton.
 ![Figure 2: The NDFA diagram](ndfa.png)
+
 Here is the graphical representations of the converted deterministic automaton.
 ![Figure 3: The DFA diagram](dfa.png)
 
