@@ -171,8 +171,74 @@ class FiniteAutomaton:
     def to_dfa(self):
         if self.is_deterministic():
             return self
-        else:
-            return self
+        init_s = self.start_state
+        dfa_transitions = {}
+        dfa_accept_states = []
+        queue = [frozenset([init_s])]
+        visited = set()
+        dfa_states_map = {frozenset([init_s]): init_s}
+
+        while queue:
+            current_states = queue.pop(0)
+            if current_states in visited:
+                continue
+        
+            visited.add(current_states)
+
+            if len(current_states) == 1:
+                dfa_state_name = next(iter(current_states))
+            else:
+                dfa_state_name = ', '.join(sorted(current_states))
+            dfa_transitions[dfa_state_name] = {}
+
+            for symbol in self.alphabet:
+                # Get the set of states for a given symbol
+                next_states_set = set()  # Use a set to store unique next states
+
+                for state in current_states:
+                    # Get the dictionary of transitions for the current state
+                    state_transitions = self.transitions.get(state, {})
+                    next_states = state_transitions.get(symbol, [])
+                    # Add the next states to the set
+                    next_states_set.update(next_states)
+                # Convert to frozenset to maintain immutability
+                next_states_set = frozenset(next_states_set)
+
+                if not next_states_set:
+                    continue
+
+                if len(next_states_set) == 1:
+                    next_state_name = next(iter(next_states_set))
+                else:
+                    next_state_name = ', '.join(sorted(next_states_set))
+
+                dfa_transitions[dfa_state_name][symbol] = [next_state_name]  
+
+                if next_states_set not in dfa_states_map:
+                    dfa_states_map[next_states_set] = next_state_name
+                    queue.append(next_states_set)
+                # If the newly formed state set intersects with an existing final state
+                # Then set the new state as final
+                if next_states_set.intersection(self.final_states):
+                    dfa_accept_states.append(next_state_name)
+
+        dfa_states = list(dfa_states_map.values())
+        print(dfa_states)
+        return FiniteAutomaton(
+            states=dfa_states,
+            alphabet=self.alphabet,
+            transitions=dfa_transitions,
+            start_state=dfa_states_map[frozenset([self.start_state])],
+            final_states=dfa_accept_states
+        )
+    def _state_set_to_name(self, states_set):
+        # Return the existing state name if it's a single state
+        if len(states_set) == 1:
+            return next(iter(states_set))
+
+        # Create a composite state name by joining state names with ,
+        return ','.join(sorted(states_set))
+            
 if __name__ == '__main__':
     # FA definition based on provided details
     Q = {'0', '1', '2', '3'}
@@ -205,5 +271,7 @@ if __name__ == '__main__':
     fa.create_diagram().render('ndfa', format='png')
 
     dfa = fa.to_dfa()
+    dfa.create_diagram().render('dfa', format='png')
+
 
     
