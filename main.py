@@ -112,14 +112,14 @@ class Grammar:
             for production in productions:
                 if len(production) == 1:  # End terminal production
                     transitions[non_terminal][production] = final_state
-                elif self.type == 'Right Linear':
+                elif self.type == 'Type 3: Right Linear':
                     transition, new_state = production[:-1], production[1]
                     if non_terminal in transitions and transition in transitions[non_terminal]:
                          transitions[non_terminal][transition].append(new_state)
                     else:
                         transitions[non_terminal][transition] = [new_state]
                     
-                elif self.type == 'Left Linear':
+                elif self.type == 'Type 3: Left Linear':
                     transition, new_state = production[1], production[:-1]
                     if non_terminal in transitions and transition in transitions[non_terminal]:
                          transitions[non_terminal][transition].append(new_state)
@@ -248,13 +248,6 @@ class FiniteAutomaton:
             start_state=dfa_states_map[frozenset([self.start_state])],
             final_states=dfa_accept_states
         )
-    def _state_set_to_name(self, states_set):
-        # Return the existing state name if it's a single state
-        if len(states_set) == 1:
-            return next(iter(states_set))
-
-        # Create a composite state name by joining state names with ,
-        return ','.join(sorted(states_set))
             
 if __name__ == '__main__':
     # FA definition based on provided details
