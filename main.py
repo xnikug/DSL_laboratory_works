@@ -10,13 +10,16 @@ TOKENS = {
     'EQUALS': r'=',
     'GREATER': r'>',
     'LESS': r'<',
-    'IDENTIFIER': r'[a-zA-Z_][a-zA-Z0-9_]*',
+    'IDENTIFIER': r'[a-zA-Z_][a-zA-Z0-9_]*|\*',
     'NUMBER': r'-?\d+(\.\d+)?',
     'STRING': r'\'[^\']*\'',
     'COMMA': r',',
     'LPAREN': r'\(',
     'RPAREN': r'\)',
     'WHITESPACE': r'\s+',
+    'CREATE': r'\bCREATE\b',
+    'PROCEDURE': r'\bPROCEDURE\b',
+    'PARAMETER': r'@[a-zA-Z_][a-zA-Z0-9_]*',
 }
 
 # Regular expression to match all token types in order of precedence
@@ -43,7 +46,6 @@ class QueryLexer:
             raise LexerError("Empty query", 0)
             
         for match in re.finditer(MASTER_REGEX, self.query):
-            print("Debug: " + str(match))
             start_pos = match.start()
             
             # Check if there's any unrecognized content before this match
@@ -62,7 +64,6 @@ class QueryLexer:
                 value = value[1:-1]  # Remove quotes from string values
                 tokens.append((kind, value))
             else:
-                print(value)
                 tokens.append((kind, value))
                 
             last_end_pos = match.end()
@@ -89,17 +90,22 @@ def tokenize_query(query):
     except Exception as e:
         print(f"Unexpected error: {e}")
         return None
+
 if __name__ == '__main__':
 
-    # Testing the lexer with some sample queries
+    # Testing the lexer with some sample queries, including stored procedure creation
     queries = [
-        "SELECT name, age FROM users WHERE age > 13213.8 AND city = 'New York'",  # Valid
-        "SELECT name, @ge FROM users",  # Invalid character
-        "SELECT name, age FROM users WHERE age > 18 AND city = 'New York",  # Unclosed string
-        "SELECT 123name FROM users",  # Invalid identifier starting with number
+        "SELECT name, age FROM users WHERE age > 21 AND city = 'New York'",  # Valid
+        "SELECT *$* FROM users",  # Invalid character
+        "SELECT name, $ge FROM users",  # Invalid character
+        "SELECT name, age FROM users WHERE age > 18 AND city = 'Washington",  # Unclosed string
+        "SELECT 123.name FROM users",  # Invalid identifier starting with number
         "$%^&",  # Invalid characters
         "",  # Empty query
-        "SELECT name, age FROM users WHERE age > 18 AND city = 'New York' ",  # Unmathed quotes
+        "SELECT name, age FROM users WHERE age > 18 AND city = 'New'York' ",  # Unmatched quotes
+        "CREATE PROCEDURE myProc(@param1 INT, @param2 VARCHAR(100)) AS BEGIN SELECT * FROM users END"  # Stored procedure creation
+        "CREATE PROCEDURE invalidProc(param1 IN%, @param2 VARCHAR(100)) AS BEGIN SELECT * FROM users END"  # Invalid parameters definition
+
     ]
 
     for i, query in enumerate(queries):
