@@ -11,7 +11,7 @@ TOKENS = {
     'GREATER': r'>',
     'LESS': r'<',
     'IDENTIFIER': r'[a-zA-Z_][a-zA-Z0-9_]*',
-    'NUMBER': r'\d+(\.\d+)?',
+    'NUMBER': r'-?\d+(\.\d+)?',
     'STRING': r'\'[^\']*\'',
     'COMMA': r',',
     'LPAREN': r'\(',
@@ -43,6 +43,7 @@ class QueryLexer:
             raise LexerError("Empty query", 0)
             
         for match in re.finditer(MASTER_REGEX, self.query):
+            print("Debug: " + str(match))
             start_pos = match.start()
             
             # Check if there's any unrecognized content before this match
@@ -52,7 +53,6 @@ class QueryLexer:
                 
             kind = match.lastgroup
             value = match.group()
-            
             if kind == 'WHITESPACE':
                 pass  # Ignore whitespace
             elif kind == 'STRING':
@@ -62,6 +62,7 @@ class QueryLexer:
                 value = value[1:-1]  # Remove quotes from string values
                 tokens.append((kind, value))
             else:
+                print(value)
                 tokens.append((kind, value))
                 
             last_end_pos = match.end()
@@ -90,14 +91,15 @@ def tokenize_query(query):
         return None
 if __name__ == '__main__':
 
-    # Example Usage
+    # Testing the lexer with some sample queries
     queries = [
-        "SELECT name, age FROM users WHERE age > 18 AND city = 'New York'",  # Valid
+        "SELECT name, age FROM users WHERE age > 13213.8 AND city = 'New York'",  # Valid
         "SELECT name, @ge FROM users",  # Invalid character
         "SELECT name, age FROM users WHERE age > 18 AND city = 'New York",  # Unclosed string
         "SELECT 123name FROM users",  # Invalid identifier starting with number
         "$%^&",  # Invalid characters
         "",  # Empty query
+        "SELECT name, age FROM users WHERE age > 18 AND city = 'New York' ",  # Unmathed quotes
     ]
 
     for i, query in enumerate(queries):
