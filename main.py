@@ -103,7 +103,7 @@ if __name__ == '__main__':
         "$%^&",  # Invalid characters
         "",  # Empty query
         "SELECT name, age FROM users WHERE age > 18 AND city = 'New'York' ",  # Unmatched quotes
-        "CREATE PROCEDURE myProc(@param1 INT, @param2 VARCHAR(100)) AS BEGIN SELECT * FROM users END"  # Stored procedure creation
+        "CREATE PROCEDURE myProc(@param1 INT, @param2 VARCHAR(100)) AS BEGIN SELECT * FROM users END" , # Stored procedure creation
         "CREATE PROCEDURE invalidProc(param1 IN%, @param2 VARCHAR(100)) AS BEGIN SELECT * FROM users END"  # Invalid parameters definition
 
     ]
