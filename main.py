@@ -1,4 +1,5 @@
 import random
+import re
 
 def parse_regex(regex):
     """Parses the regex dynamically and generates a valid matching string."""
@@ -20,7 +21,7 @@ def parse_regex(regex):
             result += chosen
             steps.append(f"Choose from ({group_content}) → {chosen}")
             i = end_idx  # Move to closing )
-            print(result)
+            #print(result)
         elif char == "+":
             # Repeat previous character at least once, up to 5 times
             repeated = chosen * random.randint(1, 5)
@@ -58,7 +59,12 @@ def parse_regex(regex):
         i += 1  # Move to next character
 
     return result, steps
-
+def match_string(test_string, regex):
+    """Matches the generated string against the regex."""
+    if re.fullmatch(regex, test_string):
+        return f"'{test_string}' matches the regex."
+    else:
+        return f"'{test_string}' does NOT match the regex."
 if __name__ == "__main__":
     # Given regex
     regex = "(a|b)(c|d)E+G?P(Q|R|S)T(UV|W|X)*Z+1(0|1)*2(3|4){5}36"
@@ -71,3 +77,15 @@ if __name__ == "__main__":
     print("\nProcessing Steps:")
     for step in process_steps:
         print(step)
+        
+    print("Some valid strings:")
+    for i in range(5):
+        valid_string, process_steps = parse_regex(regex)
+        print(match_string(valid_string, regex))
+    print("Some invalid strings:")
+    invalid_string = "bdRVUVUVUS46"
+    print(match_string(invalid_string, regex))
+    invalid_string = "acRVVVVVTS36"
+    print(match_string(invalid_string, regex))
+    invalid_string = "acEE36"
+    print(match_string(invalid_string, regex))
