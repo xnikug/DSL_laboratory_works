@@ -25,10 +25,13 @@ Regular expression matchers are a built-in feature in most modern programming la
 
 ## Objectives
 
-1. Design and implement a regex-based generator:
-   - Understand how regular expressions define structured patterns.
-   - Develop a method to generate valid words dynamically from given regexes.
-   - Implement a mechanism to trace regex processing steps.
+Write and cover what regular expressions are, what they are used for;
+
+a. Write a code that will generate valid combinations of symbols conform given regular expressions (examples will be shown). Be careful that idea is to interpret the given regular expressions dinamycally, not to hardcode the way it will generate valid strings. You give a set of regexes as input and get valid word as an output
+
+b. In case you have an example, where symbol may be written undefined number of times, take a limit of 5 times (to evade generation of extremely long combinations);
+
+c. Bonus point: write a function that will show sequence of processing regular expression (like, what you do first, second and so on)
 
 ## Implementation Description
 
@@ -64,67 +67,93 @@ Which is converted into the following notation used in code:
 ### Code Implementation
 
 ```python
-import random
+def parse_regex(regex):
+    """Parses the regex dynamically and generates a valid matching string."""
+    steps = []
+    i = 0
+    result = ""
+    chosen = ""
 
-def generate_from_regex(regex):
-    def process_group(group):
-        options = group.strip('()').split('|')
-        return random.choice(options)
-    
-    def process_quantifier(char, quantifier):
-        min_repeats = 1 if quantifier == '+' else 0
-        max_repeats = 5 if quantifier in ['+', '*'] else 1
-        return char * random.randint(min_repeats, max_repeats)
-    
-    output = []
-    tokens = ["a|b", "c|d", "E+", "G?", "P", "Q|R|S", "T", "UV|W|X*", "Z+", "1", "0|1*", "2", "3|4{5}", "36"]
-    
-    for token in tokens:
-        if '|' in token:
-            output.append(process_group(token))
-        elif '+' in token or '*' in token or '?' in token:
-            output.append(process_quantifier(token[0], token[1:]))
-        elif '{' in token:
-            char, count = token[0], int(token[2])
-            output.append(char * count)
+    def choose(options):
+        return random.choice(options.split("|"))
+
+    while i < len(regex):
+        char = regex[i]
+        if char == "(":
+            # Extract group content
+            end_idx = regex.find(")", i)
+            group_content = regex[i + 1:end_idx]
+            chosen = choose(group_content)
+            result += chosen
+            steps.append(f"Choose from ({group_content}) → {chosen}")
+            i = end_idx  # Move to closing )
+            #print(result)
+        elif char == "+":
+            # Repeat previous character at least once, up to 5 times
+            repeated = chosen * random.randint(1, 5)
+            result += repeated
+            steps.append(f"Repeat '{chosen}' (1-5 times) → {repeated}")
+
+        elif char == "?":
+            # Previous character is optional
+            if random.choice([True, False]):
+                steps.append(f"Optional '{chosen}' → Kept")
+            else:
+                steps.append(f"Optional '{chosen}' → Removed")
+                result = result[:-1]  # Remove last character
+
+        elif char == "*":
+            # Repeat previous character 0 to 5 times
+            repeated = chosen * random.randint(0, 5)
+            result += repeated
+            steps.append(f"Repeat '{chosen}' (0-5 times) → {repeated}")
+            
+        elif char == "{":
+            # Handle {n} repetitions
+            end_idx = regex.find("}", i)
+            repeat_count = int(regex[i + 1:end_idx])
+            repeated = result[-1] * (repeat_count - 1)  # -1 since already added
+            result += repeated
+            steps.append(f"Repeat '{result[-1]}' {repeat_count} times → {repeated}")
+            i = end_idx  # Move past }
+
         else:
-            output.append(token)
-    
-    return ''.join(output)
+            # Normal character, just append it
+            result += char
+            steps.append(f"Append '{char}' → {char}")
+            chosen = char
+        i += 1  # Move to next character
 
-# Example Usage
-generated_word = generate_from_regex("(a|b)(c|d)E+G?P(Q|R|S)T(UV|W|X)*Z+1(0|1)*2(3|4){5}36")
-print("Generated valid word:", generated_word)
+    return result, steps
 ```
+The parse_regex function dynamically processes a given regular expression and generates a valid matching string by following the regex rules. It loops through each sequence of characters in the regex string and identifies different components like groups (enclosed in parentheses), quantifiers (+, ?, *, {n}), and literal characters. The function randomly chooses one of the options in the alternation (e.g., (a|b)), and for quantifiers, it repeats the selected character according to the specified rule (e.g., + for 1-5 times, ? for optional, and * for 0-5 times). The function also keeps track of each processing step and appends the corresponding string to the result.
 
 ### Processing Steps Trace
 
-A function provides step-by-step insight into how the regex is interpreted:
+The parse_regex function also provides the steps of how the regex is interpreted. And it is interpreted the following way:
 
-```python
-def trace_processing(regex):
-    steps = [
-        "1. Identify alternations and pick random choices",
-        "2. Apply quantifiers to define repetition counts",
-        "3. Assemble the final token sequence",
-        "4. Return a valid generated word"
-    ]
-    return '\n'.join(steps)
-
-print(trace_processing("(a|b)(c|d)E+G?P(Q|R|S)T(UV|W|X)*Z+1(0|1)*2(3|4){5}36"))
-```
+1. Identify alternations and pick random choices
+2. Apply quantifiers to define repetition counts
+3. Assemble the final token sequence
+4. Return a valid generated word
 
 ## Testing
 
 Several test cases validate the approach:
 
 ```python
-for _ in range(5):
-    print(generate_from_regex("(a|b)(c|d)E+G?P(Q|R|S)T(UV|W|X)*Z+1(0|1)*2(3|4){5}36"))
+    # Given regex
+    regex = "(a|b)(c|d)E+G?P(Q|R|S)T(UV|W|X)*Z+1(0|1)*2(3|4){5}36"
+
+    # Generate a valid string and show steps
+    valid_string, process_steps = parse_regex(regex)
 ```
 
-Generated outputs demonstrate compliance with the given regex constraints.
+Generated outputs showcases the expected output matching with the given regex constraints.
 
+![alt text](image-1.png)
+
+![alt text](image-2.png)
 ## Conclusions
 
 The implementation generates words that are based on a given regular expression. The program is dynamic when it comes to parsing and interpretation of various regular expression which ensures that it can handle different regex inputs. The processing sequence is traced, which illustrates the structured approach to regex interpretation. The next step would be to improve the algorithm to handle more complex nested expressions and some other additional regex operations.
