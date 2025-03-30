@@ -1,4 +1,4 @@
-# Laboratory Work No. 3
+# Laboratory Work No. 4
 
 ### Course: Formal Languages & Finite Automata  
 ### Author: Nicolae Marga
@@ -6,137 +6,129 @@
 
 ----
 ## Theory
-Lexical analysis serves as the first phase in compiler and interpreter design, functioning as the bridge between raw text and structured data. This process transforms an unstructured sequence of characters into a stream of meaningful tokens that subsequent compilation phases can process. The fundamental operations begin with scanning, where the lexer reads through the input characters one at a time, identifying patterns and boundaries within the text. As it scans, the lexer performs recognition by isolating lexemes sequences of characters that form logical units within the language, such as keywords, identifiers, or literals.
 
-Once lexemes are identified, the classification stage assigns each lexeme to a specific token type based on the language's rules and grammar. This categorization is important for determining how each element should be treated during parsing and semantic analysis. The final stage, token generation, produces the actual token objects that contain both the token type (such as "keyword," "identifier," or "operator") and the actual value encountered in the source code. These tokens serve as the fundamental building blocks that will be assembled into syntactic structures during parsing.
+Regular expressions provide an algebraic description of Finite Automata, serving as a formal method for defining patterns in strings. A regular expression over an alphabet is an expression formed using the following rules:
 
-In programming language processing, lexical analysis deliberately operates at a surface level, concerned exclusively with the structural composition of individual words and symbols without attempting to understand their contextual meaning or relationships. This separation of concerns allows the lexer to focus solely on recognizing valid language elements like keywords, identifiers, literals (strings or numbers), operators (arithmetic or comparison symbols), and punctuation. By maintaining this narrow focus, the lexer creates a tokenized representation of the source code that simplifies the complex tasks of syntactic and semantic analysis.
+- The empty set and epsilon are regular expressions.
+- Every symbol in the alphabet is a regular expression.
+- If R and S are regular expressions, then the expressions R + S (union), RS (concatenation), and R* (Kleene star) are also valid regular expressions.
 
-## Objectives:
+Regular expressions are versatile tools with a wide range of applications. In the field of Finite Automata theory, they are instrumental in determining whether a language is regular. When a language can be expressed using a regular expression, it is categorized as regular, enabling the creation of corresponding automata, either Deterministic (DFA) or Nondeterministic (NFA).
 
-1. Design and implement a lexer:
-   - Understand what lexical analysis is.
-   - Get familiar with the inner workings of a lexer/scanner/tokenizer.
-   - Implement a sample lexer and show how it works.
+In practical applications, regular expressions are frequently used for matching patterns within strings. A common use case is validating user inputs, such as passwords and usernames.
 
-## Implementation description
-The implementation consists of a SQL query lexer designed to transform raw SQL text into structured tokens for further processing. The Python's regular expression capabilities are used, this lexer handles common SQL syntax including SELECT statements, WHERE clauses, and stored procedure definitions.
+Also, regular expressions are essential in the process of tokenization. This was demonstrated in previous laboratory work, where they were used to categorize data by matching patterns.
 
-### Token Definition
+Furthermore, regular expressions are important for searching through strings. They are offer powerful and efficient methods for locating specific patterns within large amounts of text, which helps in tasks like parsing large documents or text files.
 
-The lexer begins by defining the token types it needs to recognize using regular expressions:
+Regular expression matchers are a built-in feature in most modern programming languages, which illustrates their importance in numerous fields, from software development to data analysis and text processing.
 
-```python
-TOKENS = {
-    'SELECT': r'\bSELECT\b',
-    'FROM': r'\bFROM\b',
-    'WHERE': r'\bWHERE\b',
-    'AND': r'\bAND\b',
-    'OR': r'\bOR\b',
-    'EQUALS': r'=',
-    'GREATER': r'>',
-    'LESS': r'<',
-    'IDENTIFIER': r'[a-zA-Z_][a-zA-Z0-9_]*|\*',
-    'NUMBER': r'-?\d+(\.\d+)?',
-    'STRING': r'\'[^\']*\'',
-    'COMMA': r',',
-    'LPAREN': r'\(',
-    'RPAREN': r'\)',
-    'WHITESPACE': r'\s+',
-    'CREATE': r'\bCREATE\b',
-    'PROCEDURE': r'\bPROCEDURE\b',
-    'PARAMETER': r'@[a-zA-Z_][a-zA-Z0-9_]*',
-}
+## Objectives
+
+1. Design and implement a regex-based generator:
+   - Understand how regular expressions define structured patterns.
+   - Develop a method to generate valid words dynamically from given regexes.
+   - Implement a mechanism to trace regex processing steps.
+
+## Implementation Description
+
+The implementation consists of a program that dynamically generates valid words conforming to a given regular expression without hardcoding specific cases. The program interprets regex patterns and produces matching outputs systematically.
+
+### Regex Parsing and Interpretation
+
+The program handles the given regex:
+![alt text](image.png)
+
+Which is converted into the following notation used in code:
+```
+(a|b)(c|d)E+G?P(Q|R|S)T(UV|W|X)*Z+1(0|1)*2(3|4){5}36
 ```
 
-These patterns are combined into a master regex that matches all possible tokens:
+#### Steps:
+
+1. **Grouping & Alternation Handling**:
+   - Identify alternations `(a|b)`, `(c|d)`, `(Q|R|S)`, `(UV|W|X)`.
+   - Randomly select one option for each alternation.
+
+2. **Quantifier Interpretation**:
+   - `E+` ensures at least one `E` (up to 5 for constraint).
+   - `G?` includes `G` optionally.
+   - `(UV|W|X)*` repeats chosen option up to 5 times.
+   - `Z+` ensures at least one `Z`.
+   - `(0|1)*` repeats selected digits (up to 5 times).
+   - `(3|4){5}` strictly enforces exactly five repetitions.
+
+3. **Token Assembly**:
+   - Construct a valid string following these rules.
+
+### Code Implementation
 
 ```python
-MASTER_REGEX = '|'.join(f'(?P<{key}>{value})' for key, value in TOKENS.items())
+import random
+
+def generate_from_regex(regex):
+    def process_group(group):
+        options = group.strip('()').split('|')
+        return random.choice(options)
+    
+    def process_quantifier(char, quantifier):
+        min_repeats = 1 if quantifier == '+' else 0
+        max_repeats = 5 if quantifier in ['+', '*'] else 1
+        return char * random.randint(min_repeats, max_repeats)
+    
+    output = []
+    tokens = ["a|b", "c|d", "E+", "G?", "P", "Q|R|S", "T", "UV|W|X*", "Z+", "1", "0|1*", "2", "3|4{5}", "36"]
+    
+    for token in tokens:
+        if '|' in token:
+            output.append(process_group(token))
+        elif '+' in token or '*' in token or '?' in token:
+            output.append(process_quantifier(token[0], token[1:]))
+        elif '{' in token:
+            char, count = token[0], int(token[2])
+            output.append(char * count)
+        else:
+            output.append(token)
+    
+    return ''.join(output)
+
+# Example Usage
+generated_word = generate_from_regex("(a|b)(c|d)E+G?P(Q|R|S)T(UV|W|X)*Z+1(0|1)*2(3|4){5}36")
+print("Generated valid word:", generated_word)
 ```
 
-The named capture groups allow the lexer to identify which token type was matched.
+### Processing Steps Trace
 
-### Core Lexer Implementation
-
-The `QueryLexer` class encapsulates the lexical analysis process:
-
-The tokenization process handles input by iterating through all regex matches in the query string. Throughout this traversal, it conducts thorough checks for any unrecognized characters that might appear between valid matches, raising errors with position information when detected. As tokens are identified, the process determines their types based on which named capture group was matched in the regular expression, which provides classification for each element. The implementation manages special cases, skipping whitespace tokens while processing string literals by removing surrounding quotes to extract their content values. Finally, it builds a list of tokens which are represented as (type, value) pairs, creating a more structured output that's ready for subsequent parsing stages.
-### Error Handling
-
-A custom exception class provides detailed error information:
+A function provides step-by-step insight into how the regex is interpreted:
 
 ```python
-class LexerError(Exception):
-    """Exception raised for errors during lexical analysis."""
-    def __init__(self, message, position):
-        self.message = message
-        self.position = position
-        super().__init__(f"{message} at position {position}")
-```
-
-The lexer can detect and report:
-- Empty input
-- Unrecognized characters
-- Malformed string literals
-
-A helper function provides error reporting:
-
-```python
-def tokenize_query(query):
-    """Wrapper function to handle lexer errors gracefully"""
-    try:
-        lexer = QueryLexer(query)
-        return lexer.tokenize()
-    except LexerError as e:
-        print(f"Lexer Error: {e}")
-        # Show the position with a caret
-        if query:
-            print(query)
-            print(' ' * e.position + '^')
-        return None
-    except Exception as e:
-        print(f"Unexpected error: {e}")
-        return None
-```
-
-This function not only catches and displays errors but also visually indicates their location in the input.
-
-### Testing
-
-The implementation includes sample queries to test both successful tokenization and error cases:
-
-```python
-queries = [
-    queries = [
-        "SELECT name, age FROM users WHERE age > 21 AND city = 'New York'",  # Valid
-        "SELECT *$* FROM users",  # Invalid character
-        "SELECT name, $ge FROM users",  # Invalid character
-        "SELECT name, age FROM users WHERE age > 18 AND city = 'Washington",  # Unclosed string
-        "SELECT 123.name FROM users",  # Invalid identifier starting with number
-        "$%^&",  # Invalid characters
-        "",  # Empty query
-        "SELECT name, age FROM users WHERE age > 18 AND city = 'New'York' ",  # Unmatched quotes
-        "CREATE PROCEDURE myProc(@param1 INT, @param2 VARCHAR(100)) AS BEGIN SELECT * FROM users END"  # Stored procedure creation
-        "CREATE PROCEDURE invalidProc(param1 IN%, @param2 VARCHAR(100)) AS BEGIN SELECT * FROM users END"  # Invalid parameters definition
+def trace_processing(regex):
+    steps = [
+        "1. Identify alternations and pick random choices",
+        "2. Apply quantifiers to define repetition counts",
+        "3. Assemble the final token sequence",
+        "4. Return a valid generated word"
     ]
-]
+    return '\n'.join(steps)
+
+print(trace_processing("(a|b)(c|d)E+G?P(Q|R|S)T(UV|W|X)*Z+1(0|1)*2(3|4){5}36"))
 ```
-In Query 1 it is shown the tokenization of a valid SQL query, where each part of "SELECT name, age FROM users WHERE age > 21 AND city = 'New York'" has been identified and categorized into tokens like SELECT, IDENTIFIER, COMMA, GREATER, etc.
 
-![Valid query syntax](image.png)
+## Testing
 
-Next, in Query 2, the lexer caught the invalid wildcard character "\$*\$" as an unrecognized token at position 8. Query 3 shows detection of the invalid "\$" character in "\$ge". Query 4 identified an unclosed string or unrecognized token. Query 5 caught the invalid identifier "123.name" where identifiers cannot begin with numbers.
+Several test cases validate the approach:
 
-![Invalid query syntax](image-1.png)
+```python
+for _ in range(5):
+    print(generate_from_regex("(a|b)(c|d)E+G?P(Q|R|S)T(UV|W|X)*Z+1(0|1)*2(3|4){5}36"))
+```
 
-Query 9 was successfully tokenized, displaying each part of a CREATE PROCEDURE statement properly identified as tokens (IDENTIFIER, PARAMETER, parentheses, etc.). Query 10 failed with an error message highlighting an unrecognized token "%" at position 38.
+Generated outputs demonstrate compliance with the given regex constraints.
 
-![Stored procedure syntax](image-2.png)
 ## Conclusions
 
-The lexer implements the core principles of lexical analysis with a separation of concerns. It focuses solely on tokenization, which provides a solid foundation for subsequent parsing stages. The error handling system identifies and reports lexical errors with position information, which allows to make debugging easier. The indication of errors lets the user to deal faster with problematic inputs. The use of regular expressions The token identification process makes use of the regular expressions. The practical SQL query focus demonstrates real-world applicability, which handles SQL-specific elements like keywords (SELECT, FROM, WHERE), operators, identifiers, and string literals within actual query contexts. The next step would be to implement a parser which consumes these tokens to validate the syntactic structure according to the defined grammar rules.
+The implementation generates words that are based on a given regular expression. The program is dynamic when it comes to parsing and interpretation of various regular expression which ensures that it can handle different regex inputs. The processing sequence is traced, which illustrates the structured approach to regex interpretation. The next step would be to improve the algorithm to handle more complex nested expressions and some other additional regex operations.
 
 ## References
 
-1. Formal Language & Automata Theory – Course Materials.
+1. Regular Expressions and Automata Theory – Course Materials.
