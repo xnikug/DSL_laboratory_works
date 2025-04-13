@@ -88,6 +88,67 @@ class Grammar:
 
                 self.rules[non_terminal] = [prod for prod in self.rules[non_terminal] if prod not in self.non_terminals]
 
+    def eliminate_inaccessible_symbols(self):
+        accessible = {self.start}
+        flag = True 
+        old_rules = self.rules.copy()
+
+        while flag:
+            flag = False
+            for non_terminal in accessible.copy():
+                for production in self.rules[non_terminal]:
+                    for symbol in production:
+                        if symbol in self.non_terminals and symbol not in accessible:
+                            accessible.add(symbol)
+                            flag = True
+
+        self.non_terminals = list(accessible)
+        self.rules = {nt: old_rules[nt] for nt in accessible}
+
+    def eliminate_non_productive_symbols(self):
+        productive = {self.start}
+        changes = True
+
+        while changes:
+            changes = False
+            for non_terminal in self.non_terminals:
+                if non_terminal not in productive:
+                    for production in self.rules[non_terminal]:
+                        if all(symbol in self.terminals or symbol in productive for symbol in production):
+                            productive.add(non_terminal)
+                            changes = True
+                            break
+
+        self.non_terminals = list(productive)
+
+        # Dictionary to store the rules
+        updated_rules = {}
+        for nt in productive:
+            productive_rules = []
+
+            for production in self.rules[nt]:
+                if all(symbol in self.terminals or symbol in productive for symbol in production):
+                    productive_rules.append(production)
+
+            updated_rules[nt] = productive_rules
+
+        self.rules = updated_rules
+
+    def _create_new_non_terminal(self):
+        alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+        for letter in alphabet:
+            if letter not in self.non_terminals:
+                self.non_terminals.append(letter)
+                return letter
+
+        for letter in alphabet:
+            for num in range(10):
+                new_symbol = f'{letter}{num}'
+                if new_symbol not in self.non_terminals:
+                    self.non_terminals.append(new_symbol)
+                    return new_symbol
+
 
 # Variant 21
 if __name__ == '__main__':
@@ -110,4 +171,59 @@ if __name__ == '__main__':
 
     grammar.eliminate_unit_prod()
     print('2) Elimination of unit productions:')
+    grammar.print_rules()
+
+    grammar.eliminate_inaccessible_symbols()
+    print('3) Elimination of inaccessible symbols:')
+    grammar.print_rules()
+
+    print('4) Elimination of non-productive symbols:')
+    grammar.print_rules()
+
+    rhs_to_non_terminal = {}
+    old_non_terminals = list(grammar.rules)
+
+    new_rules = {}
+    for non_terminal in list(grammar.rules):
+        new_rules[non_terminal] = set()
+        for production in grammar.rules[non_terminal]:
+            # Case for productions with more than 2 symbols
+            while len(production) > 2:
+                # Extract the first two symbols
+                first_two_symbols = production[:2]
+
+                if first_two_symbols in rhs_to_non_terminal:
+                    new_non_terminal = rhs_to_non_terminal[first_two_symbols]
+                else:
+                    new_non_terminal = grammar._create_new_non_terminal()
+                    new_rules[new_non_terminal] = {first_two_symbols}
+                    rhs_to_non_terminal[first_two_symbols] = new_non_terminal
+                # Replace the first two symbols with the new non-terminal
+                production = new_non_terminal + production[2:]
+
+            new_rules[non_terminal].add(production)
+
+    # Handle mixed productions
+    for non_terminal, productions in list(new_rules.items()):
+        temp_productions = productions.copy()
+        for production in temp_productions:
+            if len(production) == 2 and any(symbol in grammar.terminals for symbol in production):
+                new_production = []
+                for symbol in production:
+                    if symbol in grammar.terminals:
+                        if symbol in rhs_to_non_terminal:
+                            new_non_terminal = rhs_to_non_terminal[symbol]
+                        else:
+                            new_non_terminal = grammar._create_new_non_terminal()
+                            new_rules[new_non_terminal] = {symbol}
+                            rhs_to_non_terminal[symbol] = new_non_terminal
+                        new_production.append(new_non_terminal)
+                    else:
+                        new_production.append(symbol)
+                productions.remove(production)
+                productions.add(''.join(new_production))
+
+    grammar.rules = {nt: new_rules[nt] for nt in old_non_terminals + list(set(new_rules) - set(old_non_terminals))}
+
+    print('Conversion to Chomsky Normal Form:')
     grammar.print_rules()
