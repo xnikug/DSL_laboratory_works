@@ -6,143 +6,72 @@
 ----
 ## Theory
 
-In formal language theory, Chomsky Normal Form (CNF) is a simplified form of context-free grammars. A grammar in CNF has all of its production rules in one of the following forms:
-- A → BC (a non-terminal produces two non-terminals)
-- A → a (a non-terminal produces a single terminal)
-- S → ε (only if S is the start symbol and doesn't appear on the right side of any rule)
+**Parsing** is the process of analyzing text according to the rules of a formal grammar. It typically follows lexical analysis (tokenization) and constructs a structured representation of the input text. Parsing involves determining the syntactic structure of the input and validating that it conforms to the expected grammar.
 
-Converting a grammar to CNF is useful for various algorithms, including the CYK parsing algorithm, which requires the grammar to be in this form. The transformation process involves several steps to eliminate different types of problematic productions.
+An **Abstract Syntax Tree (AST)** is a hierarchical tree representation of the abstract syntactic structure of source code. Each node in the tree represents a construct in the source code. The AST abstracts away details like parentheses, semicolons, or other syntactic sugar, focusing on the essential structure and meaning of the code.
+
+### Parsing Process
+
+The parsing process typically consists of two main phases. Breaking the input text into tokens, and organizing the tokens into a hierarchical structure. Parsing errors occur when tokens cannot be organized according to the grammar rules, even if individual tokens are valid.
+
 
 ## Objectives
-
-1. Learn about Chomsky Normal Form (CNF) [1].
-2. Get familiar with the approaches of normalizing a grammar.
-3. Implement a method for normalizing an input grammar by the rules of CNF.
-   1. The implementation needs to be encapsulated in a method with an appropriate signature (also ideally in an appropriate class/type).
-   2. The implemented functionality needs executed and tested.
-   3. Also, another **BONUS point** would be given if the student will make the aforementioned function to accept any grammar, not only the one from the student's variant.
+1. Get familiar with parsing, what it is and how it can be programmed [1].
+2. Get familiar with the concept of AST [2].
+3. In addition to what has been done in the 3rd lab work do the following:
+   1. In case you didn't have a type that denotes the possible types of tokens you need to:
+      1. Have a type __*TokenType*__ (like an enum) that can be used in the lexical analysis to categorize the tokens. 
+      2. Please use regular expressions to identify the type of the token.
+   2. Implement the necessary data structures for an AST that could be used for the text you have processed in the 3rd lab work.
+   3. Implement a simple parser program that could extract the syntactic information from the input text.
 
 
 ## Implementation Description
 
-There is implemented a `Grammar` class that can transform any context-free grammar into Chomsky Normal Form. The transformation process follows several well-defined steps, each addressing specific issues in the grammar:
+### TokenType Enum
 
-1. Elimination of ε-productions
-2. Elimination of unit productions
-3. Elimination of inaccessible symbols
-4. Elimination of non-productive symbols
-5. Conversion to CNF format
+The `TokenType` enum was implemented using Python's `Enum` class with `auto()` to assign automatically values. This enum classifies tokens into categories like keywords (SELECT, FROM, WHERE), operators (=, >, <), and literals (identifiers, numbers, strings).
 
-#### Steps:
+### AST Node Classes
 
-1. **Elimination of ε-productions**:
-First, all directly nullable non-terminals must be identified. Then the algorithm finds indirectly nullable non-terminals. For each production containing nullable symbols, all possible combinations where those symbols could be removed are generated. This makes sure that no production can generate the empty string except the start symbol.
+There is a set hierarchy of classes in order to represent different elements of SQL queries in the AST:
 
-2. **Elimination of unit productions**:
-The rules of the form A → B where B is a non-terminal are all removed. The algorithm replaces each unit production with the productions of the referenced non-terminal. This process continues until no unit productions remain.
+- `ASTNode`: Base class for all AST nodes
+- `SelectStatement`: Represents a complete SELECT statement
+- `CreateProcedureStatement`: Represents a CREATE PROCEDURE statement
+- `ColumnReference`: Represents a reference to a column
+- `WhereClause`: Represents a WHERE clause with conditions
+- `BinaryOperation`: Represents comparison operations (e.g., column = value)
+- `LogicalOperation`: Represents logical operations (AND, OR)
+- `Literal`: Represents literal values (numbers, strings)
+- `Parameter`: Represents parameters in stored procedures
 
-3. **Elimination of inaccessible symbols**:
-Starting from the start symbol, all non-terminals that can be reached are tracked. Any non-terminals that cannot be reached from the start symbol are removed.
+### Parser Implementation
 
-4. **Elimination of non-productive symbols**:
-A non-terminal is productive if it can derive a string of only terminals. The code identifies all productive non-terminals and removes the non-productive ones. This ensures that every remaining non-terminal can participate in generating valid strings.
+The parser takes a recursive descent approach to processes tokens sequentially and builds an AST. It examines the first token to determine the statement type. It calls specialized methods to parse different parts of the statement, and creates appropriate AST nodes to represent the structure. The parser also handles errors when the input doesn't match the expected grammar.
 
-5. **Conversion to CNF format**:
-For productions with more than two symbols, new non-terminals are introduced to break them down. For productions mixing terminals and non-terminals, terminals are replaced with new non-terminals. This results in rules that either have exactly two non-terminals or a single terminal.
+### Error Handling
 
-### Code Implementation
+There are two types of error handling:
 
-The main part of the implementation is the `Grammar` class, which contains methods for each transformation step:
+- `LexerError`: For issues with individual tokens or unrecognized characters
+- `ParserError`: For issues with the syntactic structure of the query
 
-```python
-class Grammar:
-    def __init__(self, non_terminals, terminals, rules, start):
-        self.non_terminals = non_terminals
-        self.terminals = terminals
-        self.rules = rules
-        self.start = start
+### AST Visualization
 
-    def eliminate_e_productions(self):
-        # Find directly nullable non-terminals
-        nullable = set()
-        for non_terminal in self.non_terminals:
-            for production in self.rules[non_terminal]:
-                if production == 'ε':
-                    nullable.add(non_terminal)
-
-        # Find indirectly nullable non-terminals
-        changes = True
-        while changes:
-            changes = False
-            for non_terminal in self.non_terminals:
-                if non_terminal not in nullable:
-                    for production in self.rules[non_terminal]:
-                        if all(symbol in nullable for symbol in production):
-                            nullable.add(non_terminal)
-                            changes = True
-                            break
-
-        # Generate new rules without epsilon productions
-        new_rules = {}
-        for non_terminal in self.rules:
-            new_prods = []
-            for production in self.rules[non_terminal]:
-                if production != 'ε':
-                    new_prods.extend(self._expand_nullable_prod(production, nullable))
-            new_rules[non_terminal] = list(set(new_prods))
-
-        self.rules = new_rules
-```
-
-The elimination of unit productions, inaccessible symbols, and non-productive symbols follows a similar pattern, with each method implementing the specific algorithm for that transformation step.
-
-The final step is converting the grammar to CNF format, which involves breaking down long productions and replacing terminals in mixed productions:
-
-```python
-# Process for long productions (> 2 symbols)
-for non_terminal in list(grammar.rules):
-    for production in grammar.rules[non_terminal]:
-        while len(production) > 2:
-            first_two_symbols = production[:2]
-            if first_two_symbols in rhs_to_non_terminal:
-                new_non_terminal = rhs_to_non_terminal[first_two_symbols]
-            else:
-                new_non_terminal = grammar._create_new_non_terminal()
-                new_rules[new_non_terminal] = {first_two_symbols}
-                rhs_to_non_terminal[first_two_symbols] = new_non_terminal
-            production = new_non_terminal + production[2:]
-```
+A function was created in order to visualize the AST as a tree structure using ASCII characters, which makes it easier to understand the hierarchical relationships between tokens in the query.
 
 ## Results
 
-When running the code with the provided grammar (variant 21), the transformation process eliminates all problematic productions and successfully converts the grammar to Chomsky Normal Form. Each step of the process is printed to show the intermediate transformations:
-
-1. After eliminating ε-productions, the grammar no longer contains rules producing the empty string.
-
-![alt text](image.png)
-
-2. After eliminating unit productions, all rules produce either terminals or combinations of non-terminals.
-
-![alt text](image-1.png)
-
-3. Removing inaccessible and non-productive symbols simplifies the grammar further.
-
-![alt text](image-2.png)
-
-4. The final conversion to CNF ensures all productions are in the required format.
-
-![alt text](image-3.png)
-
-![alt text](image-4.png)
-
-The program can accept any grammar as input.
+-
 
 
 
 ## Conclusions
 
-Implementing the conversion to Chomsky Normal Form helped me understand the theoretical aspects of formal grammars better. The different steps of the transformation process address specific issues in the grammar, each with their own algorithmic challenges such as finding nullable non-terminals required a fixed-point algorithm to handle indirect nullability. Also, eliminating unit productions involved tracking changes through multiple iterations, and handling long productions required introducing new non-terminals in a methodical way. This laboratory work showcased how formal language theory can be practically applied through algorithms that manipulate grammar representations. The resulting CNF grammar is also practically useful for parsing applications.
+-
 
-## References
+## References:
+[1] [Parsing Wiki](https://en.wikipedia.org/wiki/Parsing)
 
-[1] [Chomsky Normal Form Wiki](https://en.wikipedia.org/wiki/Chomsky_normal_form)
+[2] [Abstract Syntax Tree Wiki](https://en.wikipedia.org/wiki/Abstract_syntax_tree)
