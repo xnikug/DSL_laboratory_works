@@ -17,5 +17,6 @@ def main():
         "SELECT $%^ FROM users",  # Invalid syntax
         "SELECT FROM users WHERE age > 18",  # Missing columns
     ]
+
 if __name__ == '__main__':
     main()
