@@ -1,7 +1,7 @@
 from tokens import Token, TokenType
-from ast import ASTNode, SelectStatement, CreateProcedureStatement
-from ast import Parameter, ColumnReference, WhereClause
-from ast import BinaryOperation, LogicalOperation, Literal
+from astr import ASTNode, SelectStatement, CreateProcedureStatement
+from astr import Parameter, ColumnReference, WhereClause
+from astr import BinaryOperation, LogicalOperation, Literal
 from typing import List, Optional, Union
 class ParserError(Exception):
     """Exception raised for errors during parsing."""
