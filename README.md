@@ -1,4 +1,4 @@
-# Laboratory Work No. 5
+# Laboratory Work No. 6
 ### Course: Formal Languages & Finite Automata  
 ### Author: Nicolae Marga
 ### Group: FAF-231
@@ -57,19 +57,147 @@ There are two types of error handling:
 - `LexerError`: For issues with individual tokens or unrecognized characters
 - `ParserError`: For issues with the syntactic structure of the query
 
-### AST Visualization
+## Code Implementation
+Bellow are some code snippets which showcase how the parser and lexer operates in the code.
+### TokenType Enum
 
-A function was created in order to visualize the AST as a tree structure using ASCII characters, which makes it easier to understand the hierarchical relationships between tokens in the query.
+```python
+class TokenType(Enum):
+    SELECT = auto()
+    FROM = auto()
+    WHERE = auto()
+    AND = auto()
+    OR = auto()
+    EQUALS = auto()
+    GREATER = auto()
+    LESS = auto()
+    IDENTIFIER = auto()
+    NUMBER = auto()
+    STRING = auto()
+    COMMA = auto()
+    LPAREN = auto()
+    RPAREN = auto()
+    CREATE = auto()
+    PROCEDURE = auto()
+    PARAMETER = auto()
+```
+
+### AST Node Classes
+The SelectStatement class defines a type of Abstract Syntax Tree node for representing SQL SELECT statements. It takes three attributes: a list of columns to be selected, the name of the table from which the data will be retrieved, and an optional WHERE clause to filter the results. The __str__ method is overridden to provide a string output.
+
+```python
+class SelectStatement(ASTNode):
+    def __init__(self, columns, table_name, where_clause=None):
+        self.columns = columns
+        self.table_name = table_name
+        self.where_clause = where_clause
+    
+    def __str__(self):
+        result = f"SELECT {', '.join(str(col) for col in self.columns)} FROM {self.table_name}"
+        if self.where_clause:
+            result += f" WHERE {self.where_clause}"
+        return result
+```
+
+### Parser Methods
+The parse_select_statement method has the role to convert a sequence of tokens into a SelectStatement AST node. It makes sure that the input starts with a SELECT token and then calls another method to parse the list of columns. After that, it expects a FROM token followed by an identifier token representing the table name. This method defines the grammar rule for parsing a SELECT statement in the language being interpreted or compiled.
+
+```python
+def parse_select_statement(self) -> SelectStatement:
+    """Parse a SELECT statement."""
+    # Expect SELECT keyword
+    self.expect(TokenType.SELECT)
+    
+    # Parse column list
+    columns = self.parse_column_list()
+    
+    # Expect FROM keyword
+    self.expect(TokenType.FROM)
+    
+    # Parse table name
+    table_token = self.expect(TokenType.IDENTIFIER)
+    table_name = table_token.value
+    
+    # Parse optional WHERE clause
+    where_clause = None
+    if self.current_token() and self.current_token().type == TokenType.WHERE:
+        self.advance()  # Consume WHERE token
+        where_clause = self.parse_where_clause()
+    
+    return SelectStatement(columns, table_name, where_clause)
+```
+
+### AST Visualization Function
+
+The print_ast_tree function provides a way to visualize the AST in a tree structure. It prints each node's class name and its attributes. If a node attribute is itself another AST node or a list of AST nodes, the function traverses into it recursively. For simple attribute values, it prints them directly.
+```python
+def print_ast_tree(node, indent="", is_last=True):
+    """Print an AST as a tree structure."""
+    # Determine the branch symbol
+    branch = "└── " if is_last else "├── "
+    
+    # Print the current node with proper indentation
+    print(f"{indent}{branch}{node.__class__.__name__}")
+    
+    # Determine the new indentation for children
+    new_indent = indent + ("    " if is_last else "│   ")
+    
+    # Get all attributes of the node that are ASTNodes or lists/dicts containing ASTNodes
+    children = []
+    for attr_name, attr_value in node.__dict__.items():
+        if isinstance(attr_value, ASTNode):
+            children.append((attr_name, attr_value))
+        elif isinstance(attr_value, list) and attr_value and isinstance(attr_value[0], ASTNode):
+            # For lists of nodes (like columns in a SELECT statement)
+            for i, item in enumerate(attr_value):
+                children.append((f"{attr_name}[{i}]", item))
+        elif not isinstance(attr_value, (ASTNode, list)) and attr_value is not None:
+            # Print simple values directly
+            value_branch = "└── " if not children else "├── "
+            print(f"{new_indent}{value_branch}{attr_name}: {attr_value}")
+    
+    # Recursively print children
+    for i, (attr_name, child) in enumerate(children):
+        is_last_child = i == len(children) - 1
+        label_indent = new_indent
+        print(f"{label_indent}{'└── ' if is_last_child else '├── '}{attr_name}:")
+        print_ast_tree(child, label_indent + ("    " if is_last_child else "│   "), True)
+```
 
 ## Results
 
+The implementation parses and creates abstract syntax trees for SQL queries and it has error messages for invalid queries. Here are some of the tested queries:
+
+```python
+    queries = [
+        "SELECT name, age FROM users WHERE age > 21 AND city = 'New York' AND test = 'TEST'",  # Valid
+        "SELECT * FROM users",  # Valid with wildcard
+        "SELECT name FROM users WHERE age = 18",  # Valid simple condition
+        "SELECT name, age FROM users WHERE age > 18 AND city = 'Washington",  # Unclosed string
+        "CREATE PROCEDURE myProc(@param1, @param2) AS BEGIN SELECT * FROM users END",  # Simplified sp
+        "SELECT $%^ FROM users",  # Invalid syntax
+        "SELECT FROM users WHERE age > 18",  # Missing columns
+    ]
+```
+In Image 1, the parser manages to build an AST for the query ```SELECT name FROM users WHERE (age = 18)``
+The tree showcases the hierarchical structure of the query components which consists of SelectStatement as the root, Table name identification, Column selection and WHERE clause with binary operation.
+
+![alt text](image.png)
 -
+In Image 2 demonstrates proper lexer error handling, detecting an unclosed string literal.
+```city = 'Washington```
+The error message identifies the position of the error, which is position 54.
 
+![alt text](image-1.png)
 
+In Image 3 it is illustrated the parser error handling, which detects a syntax error in SELECT FROM users WHERE age > 18. The error correctly identifies that an IDENTIFIER was expected after SELECT but got FROM instead, and also it shows the token stream for debugging.
 
+![alt text](image-2.png)
 ## Conclusions
 
--
+The parser converts SQL queries into structured abstract syntax trees. There are two main steps, which are lexical analysis followed by parsing. There are identified different types of errors: the lexer detects issues with individual tokens, such as unclosed quotes, while the parser catches structural problems like missing required elements. The hierarchical node structure of the AST represents the SQL query components. Also, the parser provides error messages that indicate the type of error, its position, and the difference between expected and received tokens, which helps in debugging. 
+
+Regular expressions are used for token identification and classification during lexical analysis. Recursive parsing is used for handling SQL grammar. Overall, the implementation offers a strong foundation for SQL query processing and can be extended to support more complex operations in the future.
 
 ## References:
 [1] [Parsing Wiki](https://en.wikipedia.org/wiki/Parsing)
